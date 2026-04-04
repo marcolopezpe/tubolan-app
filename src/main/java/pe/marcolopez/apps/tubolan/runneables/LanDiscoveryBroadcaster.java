@@ -1,5 +1,7 @@
 package pe.marcolopez.apps.tubolan.runneables;
 
+import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -24,7 +26,8 @@ public class LanDiscoveryBroadcaster implements Runnable {
       String message = "Tubolan|" + deviceName + "|" + deviceIp;
       byte[] data = message.getBytes();
 
-      DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName("255.255.255.255"), PORT);
+      InetAddress broadcast = DeviceInfoUtil.getBroadcastAddress();
+      DatagramPacket packet = new DatagramPacket(data, data.length, broadcast, PORT);
 
       socket.send(packet);
 

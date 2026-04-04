@@ -1,6 +1,7 @@
 package pe.marcolopez.apps.tubolan.utils;
 
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
@@ -70,5 +71,26 @@ public class DeviceInfoUtil {
     }
 
     return "0.0.0.0";
+  }
+
+  public static InetAddress getBroadcastAddress() throws SocketException {
+    Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+    while (interfaces.hasMoreElements()) {
+      NetworkInterface networkInterface = interfaces.nextElement();
+      if (networkInterface.isLoopback() || !networkInterface.isUp()) continue;
+
+      for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+        InetAddress broadcast = interfaceAddress.getBroadcast();
+        if (broadcast != null) {
+          return broadcast;
+        }
+      }
+    }
+
+    try {
+      return InetAddress.getByName("255.255.255.255");
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }
