@@ -95,6 +95,20 @@
         <Label fx:id="lblCurrentTarget" text="Desconocido" styleClass="current-target-label-name"/>
       </HBox>
 
+      <StackPane fx:id="stackDropZone" prefHeight="210" styleClass="drop-zone">
+        <VBox alignment="CENTER" spacing="10">
+          <Label styleClass="upload-icon">
+            <graphic>
+              <FontIcon iconLiteral="fas-upload"/>
+            </graphic>
+          </Label>
+          <Label text="Arrastra archivos aquí o haz clic para seleccionar"
+                 wrapText="true"
+                 styleClass="drop-zone-text"/>
+        </VBox>
+
+      </StackPane>
+
 
 
 

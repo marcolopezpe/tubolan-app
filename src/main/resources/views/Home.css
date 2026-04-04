@@ -84,7 +84,7 @@
   -fx-border-radius: 10px;
   -fx-padding: 15px;
   -fx-min-width: 250px;
-  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 12, 0.2, 0, 2);
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 12, 0.2, 0, 2);
 }
 
 .group-title {
@@ -127,7 +127,7 @@
   -fx-font-size: 20px;
   -fx-padding: 5px 12px;
   -fx-cursor: hand;
-  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 12, 0.2, 0, 2);
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 12, 0.2, 0, 2);
 }
 
 .action-icon {
@@ -154,4 +154,29 @@
   -fx-font-size: 16px;
   -fx-text-fill: #1D1D1F;
   -fx-font-weight: bold;
+}
+
+.drop-zone {
+  -fx-background-color: #FAFAFA;
+  -fx-border-color: #A1A1A6;
+  -fx-border-style: dashed;
+  -fx-border-width: 2px;
+  -fx-border-radius: 10px;
+  -fx-background-radius: 10px;
+}
+
+.drop-zone:hover {
+  -fx-background-color: #f2f7ff;
+}
+
+.upload-icon {
+  -fx-font-size: 40px;
+  -fx-text-fill: #444;
+}
+
+.drop-zone-text {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #111;
+  -fx-text-alignment: center;
 }
