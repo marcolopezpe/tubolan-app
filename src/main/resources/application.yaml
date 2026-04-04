@@ -1,0 +1,3 @@
+quarkus:
+  fx:
+    views-root: views

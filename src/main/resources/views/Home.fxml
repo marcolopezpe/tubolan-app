@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<BorderPane fx:id="root"
+            prefHeight="768.0"
+            prefWidth="1024.0"
+            stylesheets="@Home.css"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="pe.marcolopez.apps.tubolan.views.HomeController">
+  <top>
+    <HBox alignment="CENTER_LEFT" prefHeight="90.0" styleClass="header-container">
+      <padding>
+        <Insets bottom="20" left="30" right="30" top="20"/>
+      </padding>
+
+      <Label styleClass="header-title" text="TuboLAN"/>
+
+      <Region HBox.hgrow="ALWAYS"/>
+
+      <VBox alignment="CENTER_RIGHT" spacing="5">
+        <Label fx:id="lblDeviceName" styleClass="header-device-name" text="MARCO-PC"/>
+
+        <HBox alignment="CENTER_RIGHT" spacing="8">
+          <StackPane styleClass="status-dot-user, status-online"/>
+          <Label fx:id="lblDeviceStatus" styleClass="status-online-text" text="Online (192.168.1.31)"/>
+        </HBox>
+      </VBox>
+    </HBox>
+  </top>
+
+  <left>
+    <VBox spacing="15" prefWidth="230" styleClass="sidebar-container">
+      <padding>
+        <Insets top="25" right="20" bottom="20" left="25"/>
+      </padding>
+      <Label text="Dispositivos" styleClass="section-title"/>
+
+      <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="device-panel">
+        <Label text="CONECTADOS" styleClass="group-title"/>
+
+        <VBox fx:id="vboxConnectedDevices" spacing="10">
+
+          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item-selected">
+            <StackPane styleClass="status-dot-device, status-online"/>
+            <Label text="PC-Sala" styleClass="device-name-selected"/>
+          </HBox>
+
+          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
+            <StackPane styleClass="status-dot-device, status-online"/>
+            <Label text="PC-Cocina" styleClass="device-name"/>
+          </HBox>
+
+          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
+            <StackPane styleClass="status-dot-device, status-online"/>
+            <Label text="PC-Juegos" styleClass="device-name"/>
+          </HBox>
+
+        </VBox>
+
+        <Label text="DESCONECTADOS" styleClass="group-title"/>
+
+        <VBox spacing="10">
+          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
+            <StackPane styleClass="status-dot-device, status-offline"/>
+            <Label text="PC-Oficina" styleClass="device-name"/>
+          </HBox>
+
+          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
+            <StackPane styleClass="status-dot-device, status-offline"/>
+            <Label text="PC-Sótano" styleClass="device-name"/>
+          </HBox>
+        </VBox>
+
+        <Region VBox.vgrow="ALWAYS"/>
+
+        <HBox alignment="BOTTOM_CENTER" spacing="10">
+          <Button styleClass="sidebar-button">
+            <graphic>
+              <FontIcon iconLiteral="fas-sync-alt" styleClass="action-icon"/>
+            </graphic>
+          </Button>
+          <Button styleClass="sidebar-button">
+            <graphic>
+              <FontIcon iconLiteral="fas-inbox" styleClass="action-icon"/>
+            </graphic>
+          </Button>
+          <Button styleClass="sidebar-button">
+            <graphic>
+              <FontIcon iconLiteral="fas-cog" styleClass="action-icon"/>
+            </graphic>
+          </Button>
+        </HBox>
+      </VBox>
+    </VBox>
+  </left>
+
+  <center>
+    <VBox spacing="20" styleClass="main-content-container">
+
+      <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+      </padding>
+
+      <HBox>
+        <Label text="Destino actual: " styleClass="current-target-label"/>
+        <Label text="PC-Sala (192.168.1.45)" styleClass="current-target-label-name"/>
+      </HBox>
+
+
+
+
+
+    </VBox>
+  </center>
+</BorderPane>
