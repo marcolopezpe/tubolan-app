@@ -66,9 +66,7 @@ public class HomeController {
       StackPane statusDot = new StackPane();
       statusDot.getStyleClass().addAll("status-dot-device", "status-online");
 
-      String displayName = deviceName.split("\\.")[0];
-
-      Label lblName = new Label(displayName);
+      Label lblName = new Label(deviceName);
       lblName.getStyleClass().add("device-name");
 
       deviceBox.getChildren().addAll(statusDot, lblName);
