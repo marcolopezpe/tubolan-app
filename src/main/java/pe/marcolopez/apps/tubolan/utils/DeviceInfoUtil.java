@@ -29,7 +29,13 @@ public class DeviceInfoUtil {
 
       while (interfaces.hasMoreElements()) {
         NetworkInterface ni = interfaces.nextElement();
+
         if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
+
+        String name = ni.getName().toLowerCase();
+
+        boolean isMac = System.getProperty("os.name").toLowerCase().contains("mac");
+        if (isMac && !(name.equals("en0") || name.equals("en1"))) continue;
 
         for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
           InetAddress addr = ia.getAddress();
