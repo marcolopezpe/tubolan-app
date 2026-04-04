@@ -32,12 +32,24 @@ public class DeviceInfoUtil {
 
         if (!networkInterface.isUp() || networkInterface.isLoopback()) continue;
 
-        for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-          InetAddress addr = interfaceAddress.getAddress();
-          if (addr instanceof Inet4Address) {
-            String ip = addr.getHostAddress();
-            if (ip.startsWith("192.") || ip.startsWith("10.")) {
-              return ip;
+        String name = networkInterface.getName();
+        if (name.equals("en0")) { // Wi-Fi macOS
+          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
+            InetAddress addr = ia.getAddress();
+            if (addr instanceof Inet4Address) {
+              return addr.getHostAddress();
+            }
+          }
+        }
+
+        if (name.startsWith("eth") || name.startsWith("wlan")) {
+          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
+            InetAddress addr = ia.getAddress();
+            if (addr instanceof Inet4Address) {
+              String ip = addr.getHostAddress();
+              if (ip.startsWith("192.") || ip.startsWith("10.")) {
+                return ip;
+              }
             }
           }
         }
