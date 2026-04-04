@@ -1,9 +1,6 @@
 package pe.marcolopez.apps.tubolan.utils;
 
-import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
+import java.net.*;
 import java.util.Enumeration;
 
 public class DeviceInfoUtil {
@@ -33,34 +30,13 @@ public class DeviceInfoUtil {
       while (interfaces.hasMoreElements()) {
         NetworkInterface networkInterface = interfaces.nextElement();
 
-        String interfaceName = networkInterface.getDisplayName().toLowerCase();
+        if (!networkInterface.isUp() || networkInterface.isLoopback()) continue;
 
-        if (!networkInterface.isUp()
-            || networkInterface.isLoopback()
-            || interfaceName.contains("virtual")
-            || interfaceName.contains("vmware")
-            || interfaceName.contains("hyper-v")
-            || interfaceName.contains("veth")
-            || interfaceName.contains("docker")
-            || interfaceName.contains("wsl")
-            || interfaceName.contains("vethernet")
-            || interfaceName.contains("bluetooth")) {
-          continue;
-        }
-
-        Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-
-        while (addresses.hasMoreElements()) {
-          InetAddress address = addresses.nextElement();
-
-          if (!address.isLoopbackAddress()
-              && address instanceof java.net.Inet4Address) {
-
-            String ip = address.getHostAddress();
-
-            if (ip.startsWith("192.168.")
-                || ip.startsWith("10.")
-                || ip.startsWith("172.")) {
+        for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+          InetAddress addr = interfaceAddress.getAddress();
+          if (addr instanceof Inet4Address) {
+            String ip = addr.getHostAddress();
+            if (ip.startsWith("192.") || ip.startsWith("10.")) {
               return ip;
             }
           }
@@ -70,27 +46,6 @@ public class DeviceInfoUtil {
       e.printStackTrace();
     }
 
-    return "0.0.0.0";
-  }
-
-  public static InetAddress getBroadcastAddress() throws SocketException {
-    Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-    while (interfaces.hasMoreElements()) {
-      NetworkInterface networkInterface = interfaces.nextElement();
-      if (networkInterface.isLoopback() || !networkInterface.isUp()) continue;
-
-      for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-        InetAddress broadcast = interfaceAddress.getBroadcast();
-        if (broadcast != null) {
-          return broadcast;
-        }
-      }
-    }
-
-    try {
-      return InetAddress.getByName("255.255.255.255");
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return "127.0.0.1";
   }
 }

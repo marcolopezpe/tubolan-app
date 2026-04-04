@@ -26,13 +26,21 @@ public class LanDiscoveryBroadcaster implements Runnable {
       byte[] data = message.getBytes();
 
       while (true) {
-        InetAddress broadcast = DeviceInfoUtil.getBroadcastAddress();
-        if (broadcast != null) {
-          DatagramPacket packet = new DatagramPacket(data, data.length, broadcast, PORT);
-          try {
-            socket.send(packet);
-          } catch (Exception e) {
-            e.printStackTrace();
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+          NetworkInterface networkInterface = interfaces.nextElement();
+          if (networkInterface.isLoopback() || !networkInterface.isUp()) continue;
+
+          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
+            InetAddress broadcast = ia.getBroadcast();
+            if (broadcast != null) {
+              DatagramPacket packet = new DatagramPacket(data, data.length, broadcast, PORT);
+              try {
+                socket.send(packet);
+              } catch (Exception e) {
+                e.printStackTrace();
+              }
+            }
           }
         }
 
