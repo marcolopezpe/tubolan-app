@@ -30,10 +30,10 @@ public class DeviceInfoUtil {
       while (interfaces.hasMoreElements()) {
         NetworkInterface networkInterface = interfaces.nextElement();
 
-        if (!networkInterface.isUp() || networkInterface.isLoopback()) continue;
+        if (!networkInterface.isUp() || networkInterface.isLoopback() || networkInterface.isVirtual()) continue;
 
         String name = networkInterface.getName();
-        if (name.equals("en0")) { // Wi-Fi macOS
+        if (name.equals("en0")) {
           for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
             InetAddress addr = ia.getAddress();
             if (addr instanceof Inet4Address) {
