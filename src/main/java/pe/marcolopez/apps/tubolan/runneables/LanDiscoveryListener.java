@@ -1,11 +1,18 @@
 package pe.marcolopez.apps.tubolan.runneables;
 
+import pe.marcolopez.apps.tubolan.views.HomeController;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 public class LanDiscoveryListener implements Runnable {
 
   private static final int PORT = 7549;
+  private final HomeController homeController;
+
+  public LanDiscoveryListener(HomeController homeController) {
+    this.homeController = homeController;
+  }
 
   @Override
   public void run() {
@@ -18,7 +25,13 @@ public class LanDiscoveryListener implements Runnable {
 
         String message = new String(packet.getData(), 0, packet.getLength());
         if (message.contains("Tubolan")) {
-          IO.println("Dispositivo encontrado: " + message);
+          String[] parts = message.split("\\|");
+          if (parts.length >= 3) {
+            String deviceName = parts[1];
+            String deviceIp = parts[2];
+
+            homeController.addConnectedDevice(deviceName, deviceIp);
+          }
         }
       }
     } catch (Exception e) {
@@ -26,7 +39,7 @@ public class LanDiscoveryListener implements Runnable {
     }
   }
 
-  public static void start() {
-    Thread.startVirtualThread(new LanDiscoveryListener());
+  public static void start(HomeController controller) {
+    Thread.startVirtualThread(new LanDiscoveryListener(controller));
   }
 }

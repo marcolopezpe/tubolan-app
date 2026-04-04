@@ -44,26 +44,9 @@
       <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="device-panel">
         <Label text="CONECTADOS" styleClass="group-title"/>
 
-        <VBox fx:id="vboxConnectedDevices" spacing="10">
+        <VBox fx:id="vboxConnectedDevices" spacing="10"/>
 
-          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item-selected">
-            <StackPane styleClass="status-dot-device, status-online"/>
-            <Label text="PC-Sala" styleClass="device-name-selected"/>
-          </HBox>
-
-          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
-            <StackPane styleClass="status-dot-device, status-online"/>
-            <Label text="PC-Cocina" styleClass="device-name"/>
-          </HBox>
-
-          <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
-            <StackPane styleClass="status-dot-device, status-online"/>
-            <Label text="PC-Juegos" styleClass="device-name"/>
-          </HBox>
-
-        </VBox>
-
-        <Label text="DESCONECTADOS" styleClass="group-title"/>
+        <!--<Label text="DESCONECTADOS" styleClass="group-title"/>
 
         <VBox spacing="10">
           <HBox spacing="10" alignment="CENTER_LEFT" styleClass="device-item">
@@ -75,7 +58,7 @@
             <StackPane styleClass="status-dot-device, status-offline"/>
             <Label text="PC-Sótano" styleClass="device-name"/>
           </HBox>
-        </VBox>
+        </VBox>-->
 
         <Region VBox.vgrow="ALWAYS"/>
 

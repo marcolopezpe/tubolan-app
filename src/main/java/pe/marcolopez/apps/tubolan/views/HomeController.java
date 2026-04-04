@@ -4,18 +4,25 @@ import io.quarkiverse.fx.views.FxView;
 import jakarta.enterprise.context.Dependent;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryBroadcaster;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
 import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @FxView
 @Dependent
 public class HomeController {
+
+  private final Set<String> connectedDevices = ConcurrentHashMap.newKeySet();
 
   @FXML
   Parent root;
@@ -37,7 +44,7 @@ public class HomeController {
     lblDeviceName.setText(deviceName);
     lblDeviceStatus.setText("Online (" + deviceIp + ")");
 
-    LanDiscoveryListener.start();
+    LanDiscoveryListener.start(this);
     LanDiscoveryBroadcaster.start(deviceName, deviceIp);
 
     Stage stage = new Stage();
@@ -53,8 +60,24 @@ public class HomeController {
   }
 
   public void addConnectedDevice(String deviceName, String deviceIp) {
-    Platform.runLater(() -> {
+    String key = deviceName + "|" + deviceIp;
+    if (!connectedDevices.add(key)) {
+      return;
+    }
 
+    Platform.runLater(() -> {
+      HBox deviceBox = new HBox(10);
+      deviceBox.getStyleClass().add("device-item");
+      deviceBox.setAlignment(Pos.CENTER_LEFT);
+
+      StackPane statusDot = new StackPane();
+      statusDot.getStyleClass().addAll("status-dot-device", "status-online");
+
+      Label lblName = new Label(deviceName);
+      lblName.getStyleClass().add("device-name");
+
+      deviceBox.getChildren().addAll(statusDot, lblName);
+      vboxConnectedDevices.getChildren().add(deviceBox);
     });
   }
 }
