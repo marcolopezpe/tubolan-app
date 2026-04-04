@@ -42,14 +42,12 @@ public class DeviceInfoUtil {
           }
         }
 
-        if (name.startsWith("eth") || name.startsWith("wlan")) {
-          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
-            InetAddress addr = ia.getAddress();
-            if (addr instanceof Inet4Address) {
-              String ip = addr.getHostAddress();
-              if (ip.startsWith("192.") || ip.startsWith("10.")) {
-                return ip;
-              }
+        for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
+          InetAddress addr = ia.getAddress();
+          if (addr instanceof Inet4Address) {
+            String ip = addr.getHostAddress();
+            if (ip.startsWith("192.") || ip.startsWith("10.")) {
+              return ip;
             }
           }
         }
