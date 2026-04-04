@@ -106,13 +106,25 @@
                  wrapText="true"
                  styleClass="drop-zone-text"/>
         </VBox>
-
       </StackPane>
 
+      <ScrollPane fitToWidth="true"
+                  VBox.vgrow="ALWAYS"
+                  hbarPolicy="NEVER"
+                  vbarPolicy="AS_NEEDED"
+                  pannable="true"
+                  styleClass="files-scroll-pane">
 
+        <padding>
+          <Insets top="5" right="5" bottom="5" left="10"/>
+        </padding>
 
-
-
+        <content>
+          <VBox fx:id="vboxFileTransfers"
+                spacing="15"
+                styleClass="files-container"/>
+        </content>
+      </ScrollPane>
     </VBox>
   </center>
 </BorderPane>
