@@ -28,21 +28,10 @@ public class DeviceInfoUtil {
       Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
 
       while (interfaces.hasMoreElements()) {
-        NetworkInterface networkInterface = interfaces.nextElement();
+        NetworkInterface ni = interfaces.nextElement();
+        if (!ni.isUp() || ni.isLoopback() || ni.isVirtual()) continue;
 
-        if (!networkInterface.isUp() || networkInterface.isLoopback() || networkInterface.isVirtual()) continue;
-
-        String name = networkInterface.getName();
-        if (name.equals("en0")) {
-          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
-            InetAddress addr = ia.getAddress();
-            if (addr instanceof Inet4Address) {
-              return addr.getHostAddress();
-            }
-          }
-        }
-
-        for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
+        for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
           InetAddress addr = ia.getAddress();
           if (addr instanceof Inet4Address) {
             String ip = addr.getHostAddress();
