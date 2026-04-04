@@ -2,13 +2,12 @@ package pe.marcolopez.apps.tubolan.runneables;
 
 import javafx.application.Platform;
 import javafx.scene.layout.HBox;
+import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
 import pe.marcolopez.apps.tubolan.views.HomeController;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LanDiscoveryListener implements Runnable {
@@ -49,7 +48,7 @@ public class LanDiscoveryListener implements Runnable {
             lastSeenMap.put(key, System.currentTimeMillis());
 
             if (!connectedDevices.containsKey(key)) {
-              homeController.addConnectedDevice(deviceName, deviceIp,hbox ->
+              homeController.addConnectedDevice(new Device(deviceName, deviceIp, true), hbox ->
                   connectedDevices.put(key, hbox));
             }
           }

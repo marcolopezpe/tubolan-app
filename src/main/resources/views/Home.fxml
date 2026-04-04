@@ -92,7 +92,7 @@
 
       <HBox>
         <Label text="Destino actual: " styleClass="current-target-label"/>
-        <Label text="PC-Sala (192.168.1.45)" styleClass="current-target-label-name"/>
+        <Label fx:id="lblCurrentTarget" text="Desconocido" styleClass="current-target-label-name"/>
       </HBox>
 
 

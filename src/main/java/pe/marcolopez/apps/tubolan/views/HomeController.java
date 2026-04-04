@@ -12,6 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryBroadcaster;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
 import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
@@ -33,6 +34,11 @@ public class HomeController {
 
   @FXML
   VBox vboxConnectedDevices;
+
+  @FXML
+  private Label lblCurrentTarget;
+
+  private HBox selectedDeviceBox;
 
   @FXML
   public void initialize() {
@@ -57,25 +63,40 @@ public class HomeController {
     stage.show();
   }
 
-  public void addConnectedDevice(String deviceName, String deviceIp, Consumer<HBox> callback) {
+  public void addConnectedDevice(Device device, Consumer<HBox> callback) {
     Platform.runLater(() -> {
       HBox deviceBox = new HBox(10);
       deviceBox.getStyleClass().add("device-item");
       deviceBox.setAlignment(Pos.CENTER_LEFT);
+      deviceBox.getProperties().put("device", device);
 
       StackPane statusDot = new StackPane();
       statusDot.getStyleClass().addAll("status-dot-device", "status-online");
 
-      Label lblName = new Label(deviceName);
+      Label lblName = new Label(device.getName());
       lblName.getStyleClass().add("device-name");
 
       deviceBox.getChildren().addAll(statusDot, lblName);
       vboxConnectedDevices.getChildren().add(deviceBox);
+      deviceBox.setOnMouseClicked(e -> selectDevice(deviceBox));
 
       if (callback != null) {
         callback.accept(deviceBox);
       }
     });
+  }
+
+  private void selectDevice(HBox deviceBox) {
+    if (selectedDeviceBox != null) {
+      selectedDeviceBox.getStyleClass().remove("device-item-selected");
+    }
+    selectedDeviceBox = deviceBox;
+    selectedDeviceBox.getStyleClass().add("device-item-selected");
+
+    Device device = (Device) deviceBox.getProperties().get("device");
+    if (device != null) {
+      lblCurrentTarget.setText(device.toDiplayFull());
+    }
   }
 
   public void removeConnectedDevice(HBox deviceBox) {
