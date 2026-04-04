@@ -21,12 +21,14 @@ public class LanDiscoveryBroadcaster implements Runnable {
     try (DatagramSocket socket = new DatagramSocket()) {
       socket.setBroadcast(true);
 
+      String message = "Tubolan|" + deviceName + "|" + deviceIp;
+      byte[] data = message.getBytes();
+
+      DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName("255.255.255.255"), PORT);
+
+      socket.send(packet);
+
       while (true) {
-        String message = "Tubolan|" + deviceName + "|" + deviceIp;
-        byte[] data = message.getBytes();
-
-        DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getByName("255.255.255.255"), PORT);
-
         socket.send(packet);
         Thread.sleep(3000);
       }
