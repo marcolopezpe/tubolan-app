@@ -16,6 +16,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.networks.FileSender;
+import pe.marcolopez.apps.tubolan.runneables.FileReceiverServer;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryBroadcaster;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
 import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
@@ -57,6 +58,7 @@ public class HomeController {
 
     LanDiscoveryListener.start(this);
     LanDiscoveryBroadcaster.start(deviceName, deviceIp);
+    FileReceiverServer.startServer();
 
     Stage stage = new Stage();
     stage.setResizable(false);
@@ -146,7 +148,7 @@ public class HomeController {
   private void sendFileToSelectedDevice(File file) {
     Device device = (Device) selectedDeviceBox.getProperties().get("device");
     if (device != null) {
-      FileSender.sendFile(device.getIp(), 5547, file);
+      FileSender.sendFile(device.getIp(), file);
     }
   }
 }

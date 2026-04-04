@@ -8,9 +8,11 @@ import java.net.Socket;
 
 public class FileSender {
 
-  public static void sendFile(String ipDestino, int port, File file) {
+  private static final int PORT = 5547;
+
+  public static void sendFile(String ipDestino, File file) {
     Thread.startVirtualThread(() -> {
-      try (Socket socket = new Socket(ipDestino, port);
+      try (Socket socket = new Socket(ipDestino, PORT);
            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
            FileInputStream fis = new FileInputStream(file)) {
 

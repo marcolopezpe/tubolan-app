@@ -11,16 +11,12 @@ import java.net.Socket;
 
 public class FileReceiverServer implements Runnable {
 
-  private final int port;
-
-  public FileReceiverServer(int port) {
-    this.port = port;
-  }
+  private static final int PORT = 5547;
 
   @Override
   public void run() {
-    try (ServerSocket serverSocket = new ServerSocket(port)) {
-      IO.println("Esperando archivos en puerto " + port);
+    try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+      IO.println("Esperando archivos en puerto " + PORT);
       while (true) {
         Socket client = serverSocket.accept();
         Thread.startVirtualThread(() -> handleClient(client));
@@ -59,7 +55,7 @@ public class FileReceiverServer implements Runnable {
     }
   }
 
-  public static void startServer(int port) {
-    Thread.startVirtualThread(new FileReceiverServer(port));
+  public static void startServer() {
+    Thread.startVirtualThread(new FileReceiverServer());
   }
 }
