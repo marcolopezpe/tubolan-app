@@ -49,12 +49,12 @@
 }
 
 .status-dot-device {
-  -fx-min-width: 16px;
-  -fx-min-height: 16px;
-  -fx-max-width: 16px;
-  -fx-max-height: 16px;
-  -fx-pref-width: 16px;
-  -fx-pref-height: 16px;
+  -fx-min-width: 14px;
+  -fx-min-height: 14px;
+  -fx-max-width: 14px;
+  -fx-max-height: 14px;
+  -fx-pref-width: 14px;
+  -fx-pref-height: 14px;
 
   -fx-background-radius: 50%;
   -fx-border-radius: 50%;
