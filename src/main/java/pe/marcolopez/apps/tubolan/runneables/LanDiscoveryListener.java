@@ -65,7 +65,7 @@ public class LanDiscoveryListener implements Runnable {
       long now = System.currentTimeMillis();
 
       lastSeenMap.forEach((key, lastSeen) -> {
-        if (now - lastSeen > 5_000) {
+        if (now - lastSeen > 20_000) {
           HBox hbox = connectedDevices.remove(key);
           if (hbox != null) {
             Platform.runLater(() -> homeController.removeConnectedDevice(hbox));
