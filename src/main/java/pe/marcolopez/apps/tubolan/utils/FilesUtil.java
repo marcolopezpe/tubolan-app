@@ -2,7 +2,7 @@ package pe.marcolopez.apps.tubolan.utils;
 
 import java.io.File;
 
-public class FileUtil {
+public class FilesUtil {
 
   public static File getDefaultDownloadFolder() {
     String home = System.getProperty("user.home");

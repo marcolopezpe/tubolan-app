@@ -1,44 +1,48 @@
 package pe.marcolopez.apps.tubolan.runneables;
 
-import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
-
+import jakarta.inject.Singleton;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.net.*;
-import java.util.Enumeration;
 
+import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.APP_NAME;
+import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.DEFAULT_SERVER_DATA_PORT;
+
+@Slf4j
+@Singleton
 public class LanDiscoveryBroadcaster implements Runnable {
 
-  private static final int PORT = 7549;
+  @ConfigProperty(name = "application.server.data.port", defaultValue = DEFAULT_SERVER_DATA_PORT)
+  int portServerData;
 
-  private final String deviceName;
-  private final String deviceIp;
-
-  public LanDiscoveryBroadcaster(String deviceName, String deviceIp) {
-    this.deviceName = deviceName;
-    this.deviceIp = deviceIp;
-  }
+  @Setter
+  String deviceName;
+  @Setter
+  String deviceIp;
 
   @Override
   public void run() {
-    try (DatagramSocket socket = new DatagramSocket()) {
+    try (var socket = new DatagramSocket()) {
       socket.setBroadcast(true);
 
-      String message = "Tubolan|" + deviceName + "|" + deviceIp;
-      byte[] data = message.getBytes();
+      var message = APP_NAME + "|" + deviceName + "|" + deviceIp;
+      var data = message.getBytes();
 
       while (true) {
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        var interfaces = NetworkInterface.getNetworkInterfaces();
         while (interfaces.hasMoreElements()) {
-          NetworkInterface networkInterface = interfaces.nextElement();
+          var networkInterface = interfaces.nextElement();
           if (networkInterface.isLoopback() || !networkInterface.isUp()) continue;
 
-          for (InterfaceAddress ia : networkInterface.getInterfaceAddresses()) {
-            InetAddress broadcast = ia.getBroadcast();
+          for (var ia : networkInterface.getInterfaceAddresses()) {
+            var broadcast = ia.getBroadcast();
             if (broadcast != null) {
-              DatagramPacket packet = new DatagramPacket(data, data.length, broadcast, PORT);
+              var packet = new DatagramPacket(data, data.length, broadcast, portServerData);
               try {
                 socket.send(packet);
               } catch (Exception e) {
-                e.printStackTrace();
+                log.error("### Error sending broadcast packet: {}", e.getMessage(), e);
               }
             }
           }
@@ -47,11 +51,11 @@ public class LanDiscoveryBroadcaster implements Runnable {
         Thread.sleep(3000);
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("### Error in LanDiscoveryBroadcaster: {}", e.getMessage(), e);
     }
   }
 
-  public static void start(String deviceName, String deviceIp) {
-    Thread.startVirtualThread(new LanDiscoveryBroadcaster(deviceName, deviceIp));
+  public void start() {
+    Thread.startVirtualThread(this);
   }
 }

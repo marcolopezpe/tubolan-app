@@ -2,34 +2,47 @@ package pe.marcolopez.apps.tubolan.views;
 
 import io.quarkiverse.fx.views.FxView;
 import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import javafx.application.Platform;
+import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import org.kordamp.ikonli.javafx.FontIcon;
+import lombok.extern.slf4j.Slf4j;
 import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.models.FileTransfer;
+import pe.marcolopez.apps.tubolan.networks.DeviceNetwork;
 import pe.marcolopez.apps.tubolan.networks.FileSender;
-import pe.marcolopez.apps.tubolan.runneables.FileReceiverServer;
-import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryBroadcaster;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
-import pe.marcolopez.apps.tubolan.utils.DeviceInfoUtil;
-
+import pe.marcolopez.apps.tubolan.config.DeviceSession;
 import java.awt.*;
 import java.io.File;
-import java.util.function.Consumer;
+import java.util.Objects;
 
+import static javafx.scene.control.Alert.AlertType.ERROR;
+import static pe.marcolopez.apps.tubolan.utils.ControlsUtil.*;
+
+@Slf4j
 @FxView
 @Dependent
 public class HomeController {
+
+  @Inject
+  DeviceSession sessionData;
+
+  @Inject
+  LanDiscoveryListener lanDiscoveryListener;
+
+  @Inject
+  FileSender fileSender;
+
+  @Inject
+  DeviceNetwork deviceNetwork;
 
   @FXML
   Parent root;
@@ -52,75 +65,64 @@ public class HomeController {
   @FXML
   VBox vboxFileTransfers;
 
-  HBox selectedDeviceBox;
+  HBox deviceBoxSelected;
 
   @FXML
   public void initialize() {
-    String deviceName = DeviceInfoUtil.getDeviceName();
-    String deviceIp = DeviceInfoUtil.getRealLocalIp();
+    lblDeviceName.setText(sessionData.getDevice().getName());
+    lblDeviceStatus.setText("Online (" + sessionData.getDevice().getIp() + ")");
 
-    lblDeviceName.setText(deviceName);
-    lblDeviceStatus.setText("Online (" + deviceIp + ")");
+    this.refreshConnectedDevices();
 
-    LanDiscoveryListener.start(this);
-    LanDiscoveryBroadcaster.start(deviceName, deviceIp);
-    FileReceiverServer.startServer();
-
-    Stage stage = new Stage();
+    var stage = new Stage();
     stage.setResizable(false);
     stage.setOnCloseRequest(_ -> {
       Platform.exit();
       System.exit(0);
     });
 
-    Scene scene = new Scene(this.root);
+    var scene = new Scene(this.root);
     stage.setScene(scene);
     stage.show();
 
-    setupFileDropZone();
+    this.configureFileDropZone();
   }
 
-  public void addConnectedDevice(Device device, Consumer<HBox> callback) {
-    Platform.runLater(() -> {
-      HBox deviceBox = new HBox(10);
-      deviceBox.getStyleClass().add("device-item");
-      deviceBox.setAlignment(Pos.CENTER_LEFT);
-      deviceBox.getProperties().put("device", device);
+  private void refreshConnectedDevices() {
+    lanDiscoveryListener.getConnectedDevices()
+        .addListener((MapChangeListener<String, Device>) change ->
+            Platform.runLater(() -> {
+              if (change.wasAdded()) {
+                var newDevice = change.getValueAdded();
+                var newDeviceBox = createDeviceBox(newDevice, this::selectDevice);
+                vboxConnectedDevices.getChildren().add(newDeviceBox);
+              }
 
-      StackPane statusDot = new StackPane();
-      statusDot.getStyleClass().addAll("status-dot-device", "status-online");
-
-      Label lblName = new Label(device.getName());
-      lblName.getStyleClass().add("device-name");
-
-      deviceBox.getChildren().addAll(statusDot, lblName);
-      vboxConnectedDevices.getChildren().add(deviceBox);
-      deviceBox.setOnMouseClicked(e -> selectDevice(deviceBox));
-
-      if (callback != null) {
-        callback.accept(deviceBox);
-      }
-    });
+              if (change.wasRemoved()) {
+                var removedDevice = change.getValueRemoved();
+                vboxConnectedDevices.getChildren().removeIf(node -> {
+                  var deviceBox = (HBox) node;
+                  var device = (Device) deviceBox.getProperties().get("device");
+                  return device != null && device.getIp().equals(removedDevice.getIp());
+                });
+              }
+            }));
   }
 
   private void selectDevice(HBox deviceBox) {
-    if (selectedDeviceBox != null) {
-      selectedDeviceBox.getStyleClass().remove("device-item-selected");
+    if (deviceBoxSelected != null) {
+      deviceBoxSelected.getStyleClass().remove("device-item-selected");
     }
-    selectedDeviceBox = deviceBox;
-    selectedDeviceBox.getStyleClass().add("device-item-selected");
+    deviceBoxSelected = deviceBox;
+    deviceBoxSelected.getStyleClass().add("device-item-selected");
 
-    Device device = (Device) deviceBox.getProperties().get("device");
-    if (device != null) {
-      lblCurrentTarget.setText(device.toDiplayFull());
+    var deviceSelected = (Device) deviceBox.getProperties().get("device");
+    if (deviceSelected != null) {
+      lblCurrentTarget.setText(deviceSelected.toDisplayFull());
     }
   }
 
-  public void removeConnectedDevice(HBox deviceBox) {
-    vboxConnectedDevices.getChildren().remove(deviceBox);
-  }
-
-  private void setupFileDropZone() {
+  private void configureFileDropZone() {
     stackDropZone.setOnDragOver(event -> {
       if (event.getDragboard().hasFiles()) {
         event.acceptTransferModes(TransferMode.COPY);
@@ -132,42 +134,69 @@ public class HomeController {
       var dragboard = event.getDragboard();
       if (dragboard.hasFiles()) {
         dragboard.getFiles().forEach(file -> {
-          IO.println("Archivo arrastrado: " + file.getAbsolutePath());
-          sendFileToSelectedDevice(file);
+          log.info("### File dropped: {}", file.getAbsolutePath());
+          this.sendFileToSelectedDevice(file);
         });
       }
       event.setDropCompleted(true);
       event.consume();
     });
 
-    stackDropZone.setOnMouseClicked(event -> {
-      FileChooser fileChooser = new FileChooser();
-      fileChooser.setTitle("Selecciona un archivo");
-      File file = fileChooser.showOpenDialog(stackDropZone.getScene().getWindow());
+    stackDropZone.setOnMouseClicked(_ -> {
+      var fileChooser = new FileChooser();
+      fileChooser.setTitle("Seleccionar archivo");
+      var file = fileChooser.showOpenDialog(stackDropZone.getScene().getWindow());
       if (file != null) {
-        IO.println("Archivo seleccionado: " + file.getAbsolutePath());
-        sendFileToSelectedDevice(file);
+        log.info("### File selected: {}", file.getAbsolutePath());
+        this.sendFileToSelectedDevice(file);
       }
     });
   }
 
   private void sendFileToSelectedDevice(File file) {
-    Device device = (Device) selectedDeviceBox.getProperties().get("device");
-    if (device == null) {
-      IO.println("No hay dispositivo seleccionado");
+    if (deviceBoxSelected == null) {
+      log.error("### No hay dispositivo seleccionado.");
+      showMessageDialog("Error", "No hay dispositivo seleccionado", ERROR);
       return;
     }
 
-    IO.println("### Sending file to " + device.getName() + " (" + device.getIp() + ")...");
+    var device = (Device) deviceBoxSelected.getProperties().get("device");
+    if (device == null) {
+      log.error("### No hay dispositivo seleccionado.");
+      showMessageDialog("Error", "No hay dispositivo seleccionado", ERROR);
+      return;
+    }
 
-    FileTransfer fileTransfer = new FileTransfer(file);
-    fileTransfer.setStatus(FileTransfer.Status.IN_PROGRESS);
+    var fileTransfer = new FileTransfer(file);
+    fileTransfer.setTargetDevice(device);
 
-    HBox fileCard = createFileCard(fileTransfer);
+    var fileCard = createFileCard(fileTransfer);
 
     Platform.runLater(() -> vboxFileTransfers.getChildren().addFirst(fileCard));
 
-    IO.println("### File card created: " + fileCard);
+    log.info("### Trying to send file to {} ({})...", device.getName(), device.getIp());
+    log.info("### Checking reachability of {}...", device.getIp());
+
+    if (!this.isDeviceStillOnline(device)) {
+      fileTransfer.setStatus(FileTransfer.Status.FAILED);
+      fileTransfer.setErrorMessage("El dispositivo se ha desconectado");
+      fileTransfer.setErrorDetails("No se pudo establecer conexion con el dispositivo");
+
+      updateFileCard(
+          fileCard,
+          1.0,
+          0,
+          "00:00s",
+          FileTransfer.Status.FAILED,
+          () -> {
+            log.info("### View details");
+          }
+      );
+
+      log.error("### Device {} is not reachable anymore. Aborting file transfer.", device.getIp());
+      showMessageDialog("Error", "El dispositivo se ha desconectado", ERROR);
+      return;
+    }
 
     Thread.startVirtualThread(() -> {
       try {
@@ -175,21 +204,41 @@ public class HomeController {
         long startTime = System.currentTimeMillis();
 
         long sent = 0;
-        String elapsedTime = "00:00s";
+        var elapsedTime = "00:00s";
 
         while (sent < fileSize) {
           Thread.sleep(200);
-
           long chunk = Math.min(1024 * 1024, fileSize - sent);
           sent += chunk;
-
           double progress = (double) sent / fileSize;
+
+          if (fileTransfer.isCancelled()) {
+            log.info("### File transfer cancelled");
+            fileTransfer.setStatus(FileTransfer.Status.FAILED);
+            fileTransfer.setErrorMessage("Transferencia cancelada");
+            fileTransfer.setErrorDetails("El usuario canceló la transferencia");
+
+            updateFileCard(
+                fileCard,
+                progress,
+                0,
+                elapsedTime,
+                FileTransfer.Status.FAILED,
+                () -> {
+                  showMessageDialog(
+                      "Transferencia cancelada",
+                      "El usuario canceló la transferencia",
+                      ERROR
+                  );
+                }
+            );
+
+            return;
+          }
 
           long elapsedMillis = System.currentTimeMillis() - startTime;
           double elapsedSeconds = Math.max(elapsedMillis / 1000.0, 0.1);
-
           double speedMbPerSec = (sent / 1024.0 / 1024.0) / elapsedSeconds;
-
           long elapsed = elapsedMillis / 1000;
           elapsedTime = String.format("%02d:%02ds", elapsed / 60, elapsed % 60);
 
@@ -203,11 +252,16 @@ public class HomeController {
               progress,
               speedMbPerSec,
               elapsedTime,
-              FileTransfer.Status.IN_PROGRESS
+              FileTransfer.Status.IN_PROGRESS,
+              () -> {
+                log.info("### Cancelling file transfer...");
+                fileTransfer.setStatus(FileTransfer.Status.CANCELLED);
+                fileTransfer.setCancelled(true);
+              }
           );
         }
 
-        FileSender.sendFile(device.getIp(), file);
+        fileSender.sendFile(device.getIp(), file, fileTransfer);
 
         fileTransfer.setProgress(1.0);
         fileTransfer.setSpeed(0.0);
@@ -218,217 +272,46 @@ public class HomeController {
             1.0,
             0,
             elapsedTime,
-            FileTransfer.Status.SUCCESS
+            FileTransfer.Status.SUCCESS,
+            () -> {
+              log.info("### File transfer completed successfully");
+            }
         );
 
-        IO.println("### File successfully sent");
+        log.info("### File successfully sent");
 
       } catch (Exception ex) {
-        ex.printStackTrace();
+        log.error("### Error sending file: {}", ex.getMessage(), ex);
 
         fileTransfer.setStatus(FileTransfer.Status.FAILED);
 
         updateFileCard(
             fileCard,
-            0,
+            1.0,
             0,
             "00:00s",
-            FileTransfer.Status.FAILED
-        );
-
-        IO.println("### Error sending file: " + ex.getMessage());
-      }
-    });
-  }
-
-  public HBox createFileCard(FileTransfer fileTransfer) {
-    HBox hbox = new HBox(20);
-    hbox.getStyleClass().add("file-card");
-    hbox.setAlignment(Pos.BOTTOM_LEFT);
-
-    Label lblIcon = new Label();
-    lblIcon.getStyleClass().add("file-icon");
-    FontIcon icon = new FontIcon(getIconForFile(fileTransfer.getFile()));
-    lblIcon.setGraphic(icon);
-
-    VBox vboxInfo = new VBox(5);
-    vboxInfo.setMaxWidth(Double.MAX_VALUE);
-
-    Label lblName = new Label(fileTransfer.getFile().getName());
-    lblName.getStyleClass().add("file-name");
-
-    HBox hboxStats = new HBox(5);
-    hboxStats.setAlignment(Pos.CENTER);
-
-    Label lblSize = new Label(humanReadableByteCount(fileTransfer.getFile().length(), true));
-    lblSize.getStyleClass().add("file-size");
-
-    Region spacer1 = new Region();
-    HBox.setHgrow(spacer1, Priority.ALWAYS);
-
-    Label lblSpeed = new Label("0 MB/s");
-    lblSpeed.getStyleClass().add("file-speed");
-
-    Region spacer2 = new Region();
-    HBox.setHgrow(spacer2, Priority.ALWAYS);
-
-    Label lblTime = new Label("00:00s");
-    lblTime.getStyleClass().add("file-time");
-
-    hboxStats.getChildren().addAll(lblSize, spacer1, lblSpeed, spacer2, lblTime);
-
-    ProgressBar progressBar = new ProgressBar(0);
-    progressBar.getStyleClass().add("progress-bar");
-
-    vboxInfo.getChildren().addAll(lblName, hboxStats, progressBar);
-
-    VBox vboxButton = new VBox();
-    vboxButton.setAlignment(Pos.BOTTOM_RIGHT);
-    Button btnAction = new Button("Cancelar");
-    btnAction.getStyleClass().add("card-button");
-    vboxButton.getChildren().add(btnAction);
-
-    hbox.getChildren().addAll(lblIcon, vboxInfo, vboxButton);
-
-    hbox.getProperties().put("transfer", fileTransfer);
-    hbox.getProperties().put("progressBar", progressBar);
-    hbox.getProperties().put("lblSpeed", lblSpeed);
-    hbox.getProperties().put("lblTime", lblTime);
-    hbox.getProperties().put("btnAction", btnAction);
-
-    btnAction.setOnAction(e -> handleFileAction(hbox));
-
-    return hbox;
-  }
-
-  private String getIconForFile(File file) {
-    String extension = file.getName().substring(file.getName().lastIndexOf(".") + 1).toLowerCase();
-    return switch (extension) {
-      case "pdf" -> "fas-file-pdf";
-      case "doc", "docx" -> "fas-file-word";
-      case "xls", "xlsx" -> "fas-file-excel";
-      case "zip", "rar", "7z" -> "fas-file-archive";
-      case "png", "jpg", "jpeg", "gif", "bmp", "webp" -> "fas-file-image";
-      case "mp4", "avi", "mkv", "mov" -> "fas-file-video";
-      case "mp3", "wav", "ogg" -> "fas-file-audio";
-      case "txt" -> "fas-file-alt";
-      case "csv" -> "fas-file-csv";
-      case "ppt", "pptx" -> "fas-file-powerpoint";
-      case "java", "js", "ts", "html", "css", "xml", "json", "yml", "yaml" -> "fas-file-code";
-      default -> "fas-file";
-    };
-  }
-
-  private String humanReadableByteCount(long bytes, boolean si) {
-    int unit = si ? 1000 : 1024;
-
-    if (bytes < unit) {
-      return bytes + " B";
-    }
-
-    int exp = (int) (Math.log(bytes) / Math.log(unit));
-    String prefix = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-
-    return String.format("%.1f %sB", bytes / Math.pow(unit, exp), prefix);
-  }
-
-  private void handleFileAction(HBox hbox) {
-    FileTransfer transfer = (FileTransfer) hbox.getProperties().get("transfer");
-    Button btnAction = (Button) hbox.getProperties().get("btnAction");
-
-    if (transfer == null || btnAction == null) {
-      return;
-    }
-
-    IO.println("### File transfer: " + transfer.getFile().getName() + " - Status: " + transfer.getStatus());
-
-    switch (transfer.getStatus()) {
-      case IN_PROGRESS -> {
-        btnAction.setDisable(true);
-        btnAction.setText("Cancelando...");
-      }
-
-      case SUCCESS -> {
-        try {
-          File parentFolder = transfer.getFile().getParentFile();
-
-          if (parentFolder != null && parentFolder.exists()) {
-            Desktop.getDesktop().open(parentFolder);
-          }
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        }
-      }
-
-      case FAILED -> {
-        btnAction.setDisable(true);
-        btnAction.setText("Reintentando...");
-
-        new Thread(() -> {
-          try {
-            transfer.setStatus(FileTransfer.Status.IN_PROGRESS);
-
-            Platform.runLater(() -> {
-              btnAction.setDisable(false);
-              btnAction.setText("Cancelar");
-            });
-
-            Device device = (Device) selectedDeviceBox.getProperties().get("device");
-            if (device != null) {
-              FileSender.sendFile(device.getIp(), transfer.getFile());
+            FileTransfer.Status.FAILED,
+            () -> {
+              log.error("### Error updating file card: {}", ex.getMessage(), ex);
+              showMessageDialog("Error", "Error al enviar el archivo", ERROR);
             }
-          } catch (Exception ex) {
-            ex.printStackTrace();
-
-            Platform.runLater(() -> {
-              transfer.setStatus(FileTransfer.Status.FAILED);
-              btnAction.setDisable(false);
-              btnAction.setText("Reintentar");
-            });
-          }
-        }).start();
-      }
-    }
-  }
-
-  public void updateFileCard(HBox hbox, double progress, double speed, String elapsedTime, FileTransfer.Status status) {
-    Platform.runLater(() -> {
-      ProgressBar pb = (ProgressBar) hbox.getProperties().get("progressBar");
-      Label lblSpeed = (Label) hbox.getProperties().get("lblSpeed");
-      Label lblTime = (Label) hbox.getProperties().get("lblTime");
-      Button btnAction = (Button) hbox.getProperties().get("btnAction");
-      FileTransfer transfer = (FileTransfer) hbox.getProperties().get("transfer");
-
-      if (transfer != null) {
-        transfer.setProgress(progress);
-        transfer.setSpeed(speed);
-        transfer.setElapsedTime(elapsedTime);
-        transfer.setStatus(status);
-      }
-
-      pb.setProgress(progress);
-      lblSpeed.setText(progress >= 1.0 ? "Completado" : String.format("%.1f MB/s", speed));
-      lblTime.setText(elapsedTime);
-
-      if (progress >= 1.0) {
-        pb.getStyleClass().remove("progress-bar-success");
-        pb.getStyleClass().add("progress-bar-success");
-      }
-
-      switch (status) {
-        case IN_PROGRESS -> {
-          btnAction.setDisable(false);
-          btnAction.setText("Cancelar");
-        }
-        case SUCCESS -> {
-          btnAction.setDisable(false);
-          btnAction.setText("Abrir carpeta");
-        }
-        case FAILED -> {
-          btnAction.setDisable(false);
-          btnAction.setText("Reintentar");
-        }
+        );
       }
     });
+  }
+
+  private boolean isDeviceStillOnline(Device device) {
+    boolean existsInUI = vboxConnectedDevices.getChildren().stream()
+        .filter(node -> node instanceof HBox)
+        .map(node -> (HBox) node)
+        .map(hbox -> (Device) hbox.getProperties().get("device"))
+        .filter(Objects::nonNull)
+        .anyMatch(d -> d.getIp().equals(device.getIp()));
+
+    if (!existsInUI) {
+      return false;
+    }
+
+    return deviceNetwork.canOpenConnection(device);
   }
 }

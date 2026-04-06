@@ -1,7 +1,10 @@
 package pe.marcolopez.apps.tubolan.runneables;
 
-import pe.marcolopez.apps.tubolan.utils.FileUtil;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pe.marcolopez.apps.tubolan.utils.FilesUtil;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,53 +12,55 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.DEFAULT_SERVER_SOCKET_PORT;
+
+@Slf4j
+@Singleton
 public class FileReceiverServer implements Runnable {
 
-  private static final int PORT = 5547;
+  @ConfigProperty(name = "application.server.socket.port", defaultValue = DEFAULT_SERVER_SOCKET_PORT)
+  int portServerSocket;
 
   @Override
   public void run() {
-    try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-      IO.println("Esperando archivos en puerto " + PORT);
+    try (ServerSocket serverSocket = new ServerSocket(portServerSocket)) {
+      log.info("### Waiting for files on port {}...", portServerSocket);
       while (true) {
-        Socket client = serverSocket.accept();
+        var client = serverSocket.accept();
         Thread.startVirtualThread(() -> handleClient(client));
       }
-    } catch (IOException e) {
-      e.printStackTrace();
+    } catch (Exception e) {
+      log.error("### Error to start server: {}", e.getMessage(), e);
     }
   }
 
   private void handleClient(Socket client) {
-    try (DataInputStream dis = new DataInputStream(client.getInputStream())) {
-      String fileName = dis.readUTF();
-      long fileSize = dis.readLong();
-      File file = new File(FileUtil.getDefaultDownloadFolder(), fileName);
-      file.getParentFile().mkdirs();
-
-      try (FileOutputStream fos = new FileOutputStream(file)) {
-        byte[] buffer = new byte[4096];
-        long remaining = fileSize;
-        int read;
-        while (remaining > 0 && (read = dis.read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
-          fos.write(buffer, 0, read);
-          remaining -= read;
-        }
-      }
-
-      IO.println("Archivo recibido: " + file.getAbsolutePath());
-
-    } catch (IOException e) {
-
-    } finally {
+    try (client; var dis = new DataInputStream(client.getInputStream())) {
       try {
-        client.close();
-      } catch (IOException ignored) {
+        var fileName = dis.readUTF();
+        var fileSize = dis.readLong();
+        var file = new File(FilesUtil.getDefaultDownloadFolder(), fileName);
+        file.getParentFile().mkdirs();
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+          var buffer = new byte[4096];
+          var remaining = fileSize;
+          int read;
+          while (remaining > 0 && (read = dis.read(buffer, 0, (int) Math.min(buffer.length, remaining))) != -1) {
+            fos.write(buffer, 0, read);
+            remaining -= read;
+          }
+        }
+
+        log.info("### File received: {} size: {} bytes", file.getName(), fileSize);
+      } catch (Exception e) {
+        log.error("### Error receiving file on handleClient: {}", e.getMessage(), e);
       }
+    } catch (IOException ignored) {
     }
   }
 
-  public static void startServer() {
-    Thread.startVirtualThread(new FileReceiverServer());
+  public void startServer() {
+    Thread.startVirtualThread(this);
   }
 }
