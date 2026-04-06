@@ -6,6 +6,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.util.Duration?>
 <BorderPane fx:id="root"
             prefHeight="768.0"
             prefWidth="1024.0"
@@ -63,9 +64,18 @@
         <Region VBox.vgrow="ALWAYS"/>
 
         <HBox alignment="BOTTOM_CENTER" spacing="10">
-          <Button styleClass="sidebar-button">
+          <Button fx:id="btnRefresh" onAction="#handleRefreshDevices" styleClass="sidebar-button">
+            <tooltip>
+              <Tooltip text="Actualizar lista de dispositivos">
+                <showDelay>
+                  <Duration millis="0"/>
+                </showDelay>
+              </Tooltip>
+            </tooltip>
             <graphic>
-              <FontIcon iconLiteral="fas-sync-alt" styleClass="action-icon"/>
+              <StackPane fx:id="refreshIconContainer">
+                <FontIcon iconLiteral="fas-sync-alt" styleClass="action-icon"/>
+              </StackPane>
             </graphic>
           </Button>
           <Button styleClass="sidebar-button">

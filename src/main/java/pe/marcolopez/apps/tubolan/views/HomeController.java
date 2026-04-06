@@ -3,16 +3,20 @@ package pe.marcolopez.apps.tubolan.views;
 import io.quarkiverse.fx.views.FxView;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
 import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.models.FileTransfer;
@@ -20,7 +24,6 @@ import pe.marcolopez.apps.tubolan.networks.DeviceNetwork;
 import pe.marcolopez.apps.tubolan.networks.FileSender;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
 import pe.marcolopez.apps.tubolan.config.DeviceSession;
-import java.awt.*;
 import java.io.File;
 import java.util.Objects;
 
@@ -66,6 +69,12 @@ public class HomeController {
   VBox vboxFileTransfers;
 
   HBox deviceBoxSelected;
+
+  @FXML
+  Button btnRefresh;
+
+  @FXML
+  StackPane refreshIconContainer;
 
   @FXML
   public void initialize() {
@@ -313,5 +322,71 @@ public class HomeController {
     }
 
     return deviceNetwork.canOpenConnection(device);
+  }
+
+  @FXML
+  private void handleRefreshDevices() {
+    log.info("### Refreshing connected devices...");
+    btnRefresh.setDisable(true);
+
+    var rotate = new RotateTransition(Duration.seconds(1), refreshIconContainer);
+    rotate.setByAngle(360);
+    rotate.setCycleCount(RotateTransition.INDEFINITE);
+    rotate.setInterpolator(Interpolator.LINEAR);
+    rotate.play();
+
+    Thread.startVirtualThread(() -> {
+      try {
+        lanDiscoveryListener.removeExpiredDevicesManual();
+        var connectedDevices = lanDiscoveryListener.getConnectedDevices();
+
+        // Add devices that are not in the UI
+        Platform.runLater(() -> {
+          vboxConnectedDevices.getChildren().removeIf(node -> {
+            if (!(node instanceof HBox)) {
+              return false;
+            }
+            var device = (Device) node.getProperties().get("device");
+            var key = device.getName() + "|" + device.getIp();
+            return !connectedDevices.containsKey(key);
+          });
+
+          // Add devices that are in the UI but not in the connectedDevices map
+          for (var entry : connectedDevices.entrySet()) {
+            var entryKey = entry.getKey();
+            var device = entry.getValue();
+            var key = device.getName() + "|" + device.getIp();
+
+            var exists = vboxConnectedDevices.getChildren().stream()
+                .filter(node -> node instanceof HBox)
+                .map(node -> (HBox) node)
+                .map(hbox -> (Device) hbox.getProperties().get("device"))
+                .anyMatch(d -> d != null && key.equals(entryKey));
+
+            if (!exists) {
+              var deviceBox = createDeviceBox(device, this::selectDevice);
+              vboxConnectedDevices.getChildren().add(deviceBox);
+            }
+          }
+
+          // Stop animation
+          rotate.stop();
+          refreshIconContainer.setRotate(0);
+          btnRefresh.setDisable(false);
+
+          log.info("### Found {} devices connected", lanDiscoveryListener.getConnectedDevices().size());
+        });
+      } catch (Exception e) {
+        log.error("### Error refreshing devices: {}", e.getMessage(), e);
+
+        Platform.runLater(() -> {
+          rotate.stop();
+          refreshIconContainer.setRotate(0);
+          btnRefresh.setDisable(false);
+
+          showMessageDialog("Error", "Error al actualizar los dispositivos", ERROR);
+        });
+      }
+    });
   }
 }

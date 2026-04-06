@@ -8,5 +8,7 @@ public class ConstantsUtil {
   public static final String DEFAULT_DEVICE_NAME = "Unknown Device";
   public static final String DEFAULT_SERVER_SOCKET_PORT = "5547";
   public static final String DEFAULT_SERVER_DATA_PORT = "7549";
-  public static final Integer DEFAULT_TIMEOUT_LAST_SEEN = 20_000;
+  public static final Integer DEFAULT_TIMEOUT_BROADCASTER = 2_000;
+  public static final Integer DEFAULT_TIMEOUT_EXPIRED_MANUAL = 3_000;
+  public static final Integer DEFAULT_TIMEOUT_EXPIRED_AUTO = 10_000;
 }

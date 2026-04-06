@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
 
+import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.DEFAULT_SERVER_DATA_PORT;
 import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.DEFAULT_SERVER_SOCKET_PORT;
 
 @Slf4j
@@ -17,6 +18,9 @@ public class DeviceNetwork {
 
   @ConfigProperty(name = "application.server.socket.port", defaultValue = DEFAULT_SERVER_SOCKET_PORT)
   int portServerSocket;
+
+  @ConfigProperty(name = "application.server.data.port", defaultValue = DEFAULT_SERVER_DATA_PORT)
+  int portServerData;
 
   private String getDeviceName() {
     try {
@@ -56,6 +60,24 @@ public class DeviceNetwork {
     }
 
     return ConstantsUtil.DEFAULT_IP;
+  }
+
+  public void sendDiscoveryBroadcast() {
+    try (var socket = new DatagramSocket()) {
+      socket.setBroadcast(true);
+      var buffer = "DISCOVERY_TUBOLAN".getBytes();
+
+      var packet = new DatagramPacket(
+          buffer,
+          buffer.length,
+          InetAddress.getByName("255.255.255.255"),
+          portServerData
+      );
+
+      socket.send(packet);
+    } catch (Exception e) {
+
+    }
   }
 
   public boolean canOpenConnection(Device device) {

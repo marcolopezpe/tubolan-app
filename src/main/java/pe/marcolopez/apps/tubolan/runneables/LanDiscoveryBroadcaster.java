@@ -6,8 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.net.*;
 
-import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.APP_NAME;
-import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.DEFAULT_SERVER_DATA_PORT;
+import static pe.marcolopez.apps.tubolan.utils.ConstantsUtil.*;
 
 @Slf4j
 @Singleton
@@ -48,7 +47,7 @@ public class LanDiscoveryBroadcaster implements Runnable {
           }
         }
 
-        Thread.sleep(3000);
+        Thread.sleep(DEFAULT_TIMEOUT_BROADCASTER);
       }
     } catch (Exception e) {
       log.error("### Error in LanDiscoveryBroadcaster: {}", e.getMessage(), e);

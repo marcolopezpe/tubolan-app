@@ -24,7 +24,9 @@ public class LanDiscoveryListener implements Runnable {
 
   @Getter
   ObservableMap<String, Device> connectedDevices = FXCollections.observableMap(new ConcurrentHashMap<>());
+
   Map<String, Long> lastSeenMap = new ConcurrentHashMap<>();
+
   @Setter
   String ip;
 
@@ -32,8 +34,6 @@ public class LanDiscoveryListener implements Runnable {
   public void run() {
     try (var socket = new DatagramSocket(portServerData)) {
       var buffer = new byte[1024];
-
-      Thread.startVirtualThread(this::removeExpiredDevices);
 
       while (true) {
         var packet = new DatagramPacket(buffer, buffer.length);
@@ -45,19 +45,8 @@ public class LanDiscoveryListener implements Runnable {
           if (parts.length >= 3) {
             var deviceName = parts[1];
             var deviceIp = parts[2];
-
-            if (deviceIp.equals(ip)) {
-              continue;
-            }
-
-            var key = deviceName + "|" + deviceIp;
-            lastSeenMap.put(key, System.currentTimeMillis());
-
-            if (!connectedDevices.containsKey(key)) {
-              var device = new Device(deviceName, deviceIp, true);
-              log.info("### Adding new device: {}", device.toDisplayFull());
-              connectedDevices.put(key, device);
-            }
+            this.addDevice(deviceName, deviceIp);
+            this.removeExpiredDevicesAuto();
           }
         }
       }
@@ -66,29 +55,59 @@ public class LanDiscoveryListener implements Runnable {
     }
   }
 
-  private void removeExpiredDevices() {
-    while (true) {
-      var now = System.currentTimeMillis();
-
-      lastSeenMap.forEach((key, lastSeen) -> {
-        if (now - lastSeen > DEFAULT_TIMEOUT_LAST_SEEN) {
-          log.info("### Removing expired device: {}", key);
-          var device = connectedDevices.remove(key);
-          if (device != null) {
-            lastSeenMap.remove(key);
-          }
-        }
-      });
-
-      try {
-        Thread.sleep(1_000);
-      } catch (InterruptedException e) {
-        break;
-      }
+  private void addDevice(String deviceName, String deviceIp) {
+    if (deviceIp.equals(ip)) {
+      return;
     }
+
+    var key = deviceName + "|" + deviceIp;
+    long now = System.currentTimeMillis();
+    lastSeenMap.put(key, now);
+
+    connectedDevices.computeIfAbsent(key, k -> {
+      var device = new Device(deviceName, deviceIp, true);
+      log.info("### New device discovered: {}", device);
+      return device;
+    });
+  }
+
+  public void removeExpiredDevicesAuto() {
+    long now = System.currentTimeMillis();
+
+    connectedDevices.keySet().removeIf(key -> {
+      var lastSeen = lastSeenMap.get(key);
+      boolean expired = lastSeen == null || now - lastSeen > DEFAULT_TIMEOUT_EXPIRED_AUTO;
+      if (expired) {
+        log.info("### Removing expired device: {}", key);
+        lastSeenMap.remove(key);
+      }
+      return expired;
+    });
+  }
+
+  public void removeExpiredDevicesManual() {
+    long now = System.currentTimeMillis();
+
+    try {
+      Thread.sleep(DEFAULT_TIMEOUT_EXPIRED_MANUAL);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    connectedDevices.keySet().removeIf(key -> {
+      Long lastSeen = lastSeenMap.get(key);
+      boolean expired = lastSeen == null || now - lastSeen >= DEFAULT_TIMEOUT_EXPIRED_MANUAL;
+      if (expired) {
+        lastSeenMap.remove(key);
+        log.info("### Removing offline device immediately: {}", key);
+        return true;
+      }
+      return false;
+    });
   }
 
   public void start() {
     Thread.startVirtualThread(this);
+    Thread.startVirtualThread(this::removeExpiredDevicesAuto);
   }
 }
