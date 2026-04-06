@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<StackPane fx:id="root"
+           xmlns:fx="http://javafx.com/fxml/1"
+           prefWidth="500.0"
+           xmlns="http://javafx.com/javafx/17.0.12"
+           styleClass="stack-pane"
+           fx:controller="pe.marcolopez.apps.tubolan.views.ConfigModalController">
+  <VBox spacing="10" alignment="CENTER" styleClass="vbox" prefWidth="500">
+    <padding>
+      <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <HBox spacing="10">
+      <TextField fx:id="txtFolderField" prefWidth="400"/>
+      <Button text="..." onAction="#handleBrowseFolder" styleClass="button-folder"/>
+    </HBox>
+
+    <Button fx:id="btnBrowseButton" text="Guardar" onAction="#handleSaveFolder" styleClass="button-save"/>
+  </VBox>
+</StackPane>

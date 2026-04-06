@@ -2,12 +2,14 @@ package pe.marcolopez.apps.tubolan.views;
 
 import io.quarkiverse.fx.views.FxView;
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -15,6 +17,7 @@ import javafx.scene.control.Label;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,7 @@ import pe.marcolopez.apps.tubolan.networks.FileSender;
 import pe.marcolopez.apps.tubolan.runneables.LanDiscoveryListener;
 import pe.marcolopez.apps.tubolan.config.DeviceSession;
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 
 import static javafx.scene.control.Alert.AlertType.ERROR;
@@ -34,6 +38,14 @@ import static pe.marcolopez.apps.tubolan.utils.ControlsUtil.*;
 @FxView
 @Dependent
 public class HomeController {
+
+  @Inject
+  Instance<FXMLLoader> fxmlLoaderInstance;
+
+  @Inject
+  ConfigModalController configModalController;
+
+  Stage configModalStage;
 
   @Inject
   DeviceSession sessionData;
@@ -76,6 +88,8 @@ public class HomeController {
   @FXML
   StackPane refreshIconContainer;
 
+  Stage stage;
+
   @FXML
   public void initialize() {
     lblDeviceName.setText(sessionData.getDevice().getName());
@@ -83,7 +97,7 @@ public class HomeController {
 
     this.refreshConnectedDevices();
 
-    var stage = new Stage();
+    stage = new Stage();
     stage.setResizable(false);
     stage.setOnCloseRequest(_ -> {
       Platform.exit();
@@ -112,6 +126,10 @@ public class HomeController {
                 vboxConnectedDevices.getChildren().removeIf(node -> {
                   var deviceBox = (HBox) node;
                   var device = (Device) deviceBox.getProperties().get("device");
+                  if (deviceBox == deviceBoxSelected) {
+                    deviceBoxSelected = null;
+                    lblCurrentTarget.setText("Desconocido");
+                  }
                   return device != null && device.getIp().equals(removedDevice.getIp());
                 });
               }
@@ -388,5 +406,32 @@ public class HomeController {
         });
       }
     });
+  }
+
+  @FXML
+  private void handleConfig() {
+    var loader = fxmlLoaderInstance.get();
+    try {
+      var fxmlUrl = this.getClass().getResource("/views/ConfigModal.fxml");
+      assert fxmlUrl != null;
+      Parent fxmlParent = loader.load(fxmlUrl.openStream());
+
+      var modal = new Stage();
+      modal.initModality(Modality.APPLICATION_MODAL);
+      modal.setResizable(false);
+      modal.setTitle("Configuracion de Carpeta");
+
+      var scene = new Scene(fxmlParent);
+      var cssUrl = getClass().getResource("/views/ConfigModal.css");
+      if (cssUrl != null) {
+        scene.getStylesheets().add(cssUrl.toExternalForm());
+      }
+
+      modal.setScene(scene);
+      modal.showAndWait();
+
+    } catch (IOException e) {
+      log.error("### Error loading ConfigModal.fxml: {}", e.getMessage(), e);
+    }
   }
 }

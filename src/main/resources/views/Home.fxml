@@ -4,9 +4,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
-
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 <?import javafx.util.Duration?>
+
 <BorderPane fx:id="root"
             prefHeight="768.0"
             prefWidth="1024.0"
@@ -83,7 +83,7 @@
               <FontIcon iconLiteral="fas-inbox" styleClass="action-icon"/>
             </graphic>
           </Button>
-          <Button styleClass="sidebar-button">
+          <Button fx:id="btnConfig" styleClass="sidebar-button" onAction="#handleConfig">
             <graphic>
               <FontIcon iconLiteral="fas-cog" styleClass="action-icon"/>
             </graphic>

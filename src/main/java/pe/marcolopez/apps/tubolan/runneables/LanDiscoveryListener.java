@@ -61,7 +61,7 @@ public class LanDiscoveryListener implements Runnable {
     }
 
     var key = deviceName + "|" + deviceIp;
-    long now = System.currentTimeMillis();
+    var now = System.currentTimeMillis();
     lastSeenMap.put(key, now);
 
     connectedDevices.computeIfAbsent(key, k -> {
@@ -72,11 +72,11 @@ public class LanDiscoveryListener implements Runnable {
   }
 
   public void removeExpiredDevicesAuto() {
-    long now = System.currentTimeMillis();
+    var now = System.currentTimeMillis();
 
     connectedDevices.keySet().removeIf(key -> {
       var lastSeen = lastSeenMap.get(key);
-      boolean expired = lastSeen == null || now - lastSeen > DEFAULT_TIMEOUT_EXPIRED_AUTO;
+      var expired = lastSeen == null || now - lastSeen > DEFAULT_TIMEOUT_EXPIRED_AUTO;
       if (expired) {
         log.info("### Removing expired device: {}", key);
         lastSeenMap.remove(key);
@@ -95,14 +95,13 @@ public class LanDiscoveryListener implements Runnable {
     }
 
     connectedDevices.keySet().removeIf(key -> {
-      Long lastSeen = lastSeenMap.get(key);
-      boolean expired = lastSeen == null || now - lastSeen >= DEFAULT_TIMEOUT_EXPIRED_MANUAL;
+      var lastSeen = lastSeenMap.get(key);
+      var expired = lastSeen == null || now - lastSeen >= DEFAULT_TIMEOUT_EXPIRED_MANUAL;
       if (expired) {
         lastSeenMap.remove(key);
         log.info("### Removing offline device immediately: {}", key);
-        return true;
       }
-      return false;
+      return expired;
     });
   }
 
