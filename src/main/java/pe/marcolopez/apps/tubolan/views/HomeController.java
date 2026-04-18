@@ -14,7 +14,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -41,11 +40,6 @@ public class HomeController {
 
   @Inject
   Instance<FXMLLoader> fxmlLoaderInstance;
-
-  @Inject
-  ConfigModalController configModalController;
-
-  Stage configModalStage;
 
   @Inject
   DeviceSession sessionData;
@@ -99,7 +93,7 @@ public class HomeController {
 
     stage = new Stage();
     stage.setResizable(false);
-    stage.setOnCloseRequest(_ -> {
+    stage.setOnCloseRequest(e -> {
       Platform.exit();
       System.exit(0);
     });
@@ -152,7 +146,7 @@ public class HomeController {
   private void configureFileDropZone() {
     stackDropZone.setOnDragOver(event -> {
       if (event.getDragboard().hasFiles()) {
-        event.acceptTransferModes(TransferMode.COPY);
+        event.acceptTransferModes(javafx.scene.input.TransferMode.ANY);
       }
       event.consume();
     });
@@ -169,7 +163,7 @@ public class HomeController {
       event.consume();
     });
 
-    stackDropZone.setOnMouseClicked(_ -> {
+    stackDropZone.setOnMouseClicked(e -> {
       var fileChooser = new FileChooser();
       fileChooser.setTitle("Seleccionar archivo");
       var file = fileChooser.showOpenDialog(stackDropZone.getScene().getWindow());
@@ -215,9 +209,7 @@ public class HomeController {
           0,
           "00:00s",
           FileTransfer.Status.FAILED,
-          () -> {
-            log.info("### View details");
-          }
+          () -> log.info("### View details")
       );
 
       log.error("### Device {} is not reachable anymore. Aborting file transfer.", device.getIp());
@@ -251,13 +243,11 @@ public class HomeController {
                 0,
                 elapsedTime,
                 FileTransfer.Status.FAILED,
-                () -> {
-                  showMessageDialog(
-                      "Transferencia cancelada",
-                      "El usuario canceló la transferencia",
-                      ERROR
-                  );
-                }
+                () -> showMessageDialog(
+                    "Transferencia cancelada",
+                    "El usuario canceló la transferencia",
+                    ERROR
+                )
             );
 
             return;
@@ -300,9 +290,7 @@ public class HomeController {
             0,
             elapsedTime,
             FileTransfer.Status.SUCCESS,
-            () -> {
-              log.info("### File transfer completed successfully");
-            }
+            () -> log.info("### File transfer completed successfully")
         );
 
         log.info("### File successfully sent");

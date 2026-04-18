@@ -40,6 +40,11 @@ public class QuarkusFxApplication implements QuarkusApplication {
   }
 
   void onApplicationStartup(@Observes FxApplicationStartupEvent event) {
+    log.info("APP STARTED");
+
+    getClass().getResourceAsStream("/fonts/Inter-Italic-VariableFont_opsz,wght.ttf");
+    getClass().getResourceAsStream("/fonts/Inter-VariableFont_opsz,wght.ttf");
+
     log.info("###########################");
     log.info("### Application started ###");
     log.info("###########################");

@@ -1,3 +1,17 @@
 quarkus:
   fx:
     views-root: views
+  native:
+    additional-build-args:
+      - -H:+ReportExceptionStackTraces
+      - -H:+UnlockExperimentalVMOptions
+      - --initialize-at-build-time=javafx
+      - --initialize-at-run-time=javafx.scene
+      - --initialize-at-run-time=javafx.stage
+      - --initialize-at-run-time=javafx.fxml
+      - --initialize-at-run-time=javafx.animation
+      - --initialize-at-run-time=javafx.scene.input
+      - --initialize-at-run-time=javafx.scene.control
+      - --initialize-at-run-time=javafx.scene.text
+      - --initialize-at-run-time=javafx.scene.paint
+      - --initialize-at-run-time=com.sun.javafx

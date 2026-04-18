@@ -7,7 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.*;
-import org.kordamp.ikonli.javafx.FontIcon;
+import javafx.scene.shape.SVGPath;
 import pe.marcolopez.apps.tubolan.models.Device;
 import pe.marcolopez.apps.tubolan.models.FileTransfer;
 import java.io.File;
@@ -40,7 +40,10 @@ public class ControlsUtil {
 
     var lblIcon = new Label();
     lblIcon.getStyleClass().add("file-icon");
-    var icon = new FontIcon(getIconForFile(fileTransfer.getFile()));
+    // var icon = new FontIcon(getIconForFile(fileTransfer.getFile()));
+    var icon = new SVGPath();
+    icon.setContent(getSvgForFile(fileTransfer.getFile()));
+    icon.getStyleClass().add("svg-icon");
     lblIcon.setGraphic(icon);
 
     var vboxInfo = new VBox(5);
@@ -151,6 +154,19 @@ public class ControlsUtil {
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.showAndWait();
+  }
+
+  private static String getSvgForFile(File file) {
+    var ext = file.getName().substring(file.getName().lastIndexOf(".") + 1).toLowerCase();
+
+    return switch (ext) {
+      case "pdf" -> "M6 2h9l5 5v13a2 2 0 0 1-2 2H6z";
+      case "doc", "docx" -> "M4 4h16v16H4z";
+      case "xls", "xlsx" -> "M3 3h18v18H3z";
+      case "png", "jpg", "jpeg" -> "M4 4h16v16H4z M8 14l2-2 3 3 4-4 3 5";
+      case "mp4" -> "M4 4h16v16H4z M10 8l6 4-6 4z";
+      default -> "M5 3h14v18H5z";
+    };
   }
 
   private static String getIconForFile(File file) {
